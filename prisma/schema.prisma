@@ -6,3 +6,79 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum QuantityUOM {
+  GR
+  KG
+  TSP
+  TBSP
+  L
+  ML
+  ITEM
+  CUP
+  PINCH
+}
+
+model Ingredient {
+  id                String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String
+  recipeIngredients RecipeIngredient[]
+}
+
+model Recipe {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name     String
+  servings Int
+
+  createdAt  DateTime @default(now()) @db.Timestamp(6)
+  modifiedAt DateTime @default(now()) @db.Timestamp(6)
+
+  recipeSections    RecipeSection[]
+  recipeIngredients RecipeIngredient[]
+  recipeSteps       RecipeStep[]
+}
+
+model RecipeSection {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recipeId String @map("recipe_id") @db.Uuid
+  name     String
+  position Int
+
+  createdAt  DateTime @default(now()) @db.Timestamp(6)
+  modifiedAt DateTime @default(now()) @db.Timestamp(6)
+
+  recipe            Recipe             @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipeIngredients RecipeIngredient[]
+  recipeSteps       RecipeStep[]
+}
+
+model RecipeIngredient {
+  id              String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ingredientId    String      @map("ingredient_id") @db.Uuid
+  recipeId        String      @map("recipe_id") @db.Uuid
+  recipeSectionId String      @map("recipeSection_id") @db.Uuid
+  amount          Int
+  amountUOM       QuantityUOM
+  position        Int
+
+  createdAt  DateTime @default(now()) @db.Timestamp(6)
+  modifiedAt DateTime @default(now()) @db.Timestamp(6)
+
+  ingredient    Ingredient    @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  recipe        Recipe        @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipeSection RecipeSection @relation(fields: [recipeSectionId], references: [id], onDelete: Cascade)
+}
+
+model RecipeStep {
+  id              String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recipeId        String @map("recipe_id") @db.Uuid
+  recipeSectionId String @map("recipeSection_id") @db.Uuid
+  position        Int
+  text            String
+
+  createdAt  DateTime @default(now()) @db.Timestamp(6)
+  modifiedAt DateTime @default(now()) @db.Timestamp(6)
+
+  recipe        Recipe        @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipeSection RecipeSection @relation(fields: [recipeSectionId], references: [id], onDelete: Cascade)
+}
