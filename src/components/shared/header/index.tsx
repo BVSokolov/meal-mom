@@ -1,7 +1,8 @@
 import Link from "next/link"
 import Image from "next/image"
 import ThemeToggle from "./theme-toggle"
-import { APP_NAME } from "@/lib/constants"
+import { APP_NAME } from "@/src/lib/constants"
+import UserButton from "./user-button"
 
 const Header = () => {
   return (
@@ -21,7 +22,10 @@ const Header = () => {
             </span>
           </Link>
         </div>
-        <ThemeToggle />
+        <div className="flex gap-2">
+          <ThemeToggle />
+          <UserButton />
+        </div>
       </div>
     </header>
   )
