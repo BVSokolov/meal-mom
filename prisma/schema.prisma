@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client"
-  output   = "@/src/lib/generated/prisma"
+  output   = "../src/lib/generated/prisma"
 }
 
 datasource db {
@@ -26,12 +26,16 @@ model Ingredient {
 }
 
 model Recipe {
-  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id       String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name     String
   servings Int
+  userId   String  @map("user_id") @db.Uuid
+  public   Boolean @default(false)
 
   createdAt  DateTime @default(now()) @db.Timestamp(6)
   modifiedAt DateTime @default(now()) @db.Timestamp(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   recipeSections    RecipeSection[]
   recipeIngredients RecipeIngredient[]
@@ -97,6 +101,7 @@ model User {
 
   account Account[]
   session Session[]
+  recipes Recipe[]
 
   @@map("users")
 }
