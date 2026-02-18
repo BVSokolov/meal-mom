@@ -14,12 +14,6 @@ export const insertIngredientSchema = z.object({
   name: NAME_ZOD_VALIDATOR,
 })
 
-// Insert Recipe
-export const insertRecipeSchema = z.object({
-  name: NAME_ZOD_VALIDATOR,
-  servings: z.number().min(1, "Servings must be at least 1"),
-})
-
 // Insert Recipe Section
 export const insertRecipeSectionSchema = z.object({
   recipeId: ID_ZOD_VALIDATOR("Recipe ID is required"),
@@ -29,7 +23,7 @@ export const insertRecipeSectionSchema = z.object({
 
 // Insert Recipe Ingredient
 export const insertRecipeIngredientSchema = z.object({
-  ingredientId: ID_ZOD_VALIDATOR("Ingredient ID is required"),
+  ingredientId: z.uuid().optional(),
   recipeId: ID_ZOD_VALIDATOR("Recipe ID is required"),
   recipeSectionId: z.string(),
   amount: z.number().min(1, "Amount must be positive"),
@@ -43,6 +37,25 @@ export const insertRecipeStepSchema = z.object({
   recipeSectionId: z.string(),
   position: z.number().min(0, "Ingredient position must be non-negative"),
   text: z.string().min(10, "Recipe step must be at least 10 characters long"),
+})
+
+// Insert Recipe
+export const insertRecipeSchema = z.object({
+  name: NAME_ZOD_VALIDATOR,
+  servings: z.number().min(1, "Servings must be at least 1"),
+  userId: ID_ZOD_VALIDATOR("User ID required"),
+  public: z.boolean(),
+})
+
+// Insert New Recipe Form Data
+export const insertNewRecipeFormDataSchema = insertRecipeSchema.extend({
+  sections: z.array(insertRecipeSectionSchema),
+  ingredients: z.array(
+    insertRecipeIngredientSchema
+      .extend(insertIngredientSchema.shape)
+      .omit({ ingredientId: true }),
+  ),
+  steps: z.array(insertRecipeStepSchema),
 })
 
 // Schema for signing user in
