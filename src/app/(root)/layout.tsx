@@ -1,5 +1,5 @@
-import Footer from "@/components/shared/footer.tsx"
-import Header from "@/components/shared/header"
+import Footer from "@/src/components/shared/footer.tsx"
+import Header from "@/src/components/shared/header"
 
 export default function RootLayout({
   children,
