@@ -20,9 +20,15 @@ enum QuantityUOM {
 }
 
 model Ingredient {
-  id                String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name              String
+  id   String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name String
+
+  createdAt  DateTime @default(now()) @db.Timestamp(6)
+  modifiedAt DateTime @default(now()) @db.Timestamp(6)
+
   recipeIngredients RecipeIngredient[]
+
+  @@unique([name])
 }
 
 model Recipe {
