@@ -1,5 +1,6 @@
 "use client"
 
+import { auth } from "@/src/auth"
 import {
   Form,
   FormControl,
@@ -19,7 +20,7 @@ import z from "zod"
 const NewRecipe = () => {
   const router = useRouter()
   const form = useForm<NewRecipeFormData>({
-    resolver: zodResolver(insertNewRecipeFormDataSchema),
+    resolver: zodResolver(insertNewRecipeFormDataSchema.omit({ userId: true })),
   })
 
   const { handleSubmit } = form
@@ -31,7 +32,7 @@ const NewRecipe = () => {
   return (
     <Form {...form}>
       <form method="POST" onSubmit={handleSubmit(onSubmit)}>
-        <FormField
+        {/* <FormField
           control={form.control}
           name="name"
           render={({ field }) => (
@@ -43,7 +44,19 @@ const NewRecipe = () => {
               <FormMessage />
             </FormItem>
           )}
-        />
+        /> */}
+
+        {/* RECIPE NAME */}
+
+        {/* RECIPE SERVINGS */}
+
+        {/* IS PUBLIC */}
+
+        {/* INGREDIENTS */}
+        {/* SECTIONS OF INGREDIENTS */}
+
+        {/* STEPS */}
+        {/* SECTIONS OF STEPS */}
       </form>
     </Form>
   )
