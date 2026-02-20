@@ -11,7 +11,7 @@ const CustomFormItem = ({
     <FormItem className="w-full">
       {label && <FormLabel>{label}</FormLabel>}
       <FormControl>{children}</FormControl>
-      {/* <FormMessage /> */}
+      <FormMessage />
     </FormItem>
   )
 }

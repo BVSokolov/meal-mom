@@ -52,7 +52,9 @@ export const insertRecipeIngredientFormDataSchema = insertRecipeIngredientSchema
   .omit({ position: true })
   .extend(insertIngredientSchema.shape)
 
-export const insertRecipeStepFormDataSchema = insertRecipeStepSchema
+export const insertRecipeStepFormDataSchema = insertRecipeStepSchema.omit({
+  position: true,
+})
 
 // Insert New Recipe Form Data
 export const insertNewRecipeFormDataSchema = insertRecipeSchema.extend({
@@ -62,6 +64,14 @@ export const insertNewRecipeFormDataSchema = insertRecipeSchema.extend({
         .string()
         .min(3, "Section name must be at least 3 characters long"),
       elements: z.array(insertRecipeIngredientFormDataSchema),
+    }),
+  ),
+  steps: z.array(
+    z.object({
+      name: z
+        .string()
+        .min(3, "Section name must be at least 3 characters long"),
+      elements: z.array(insertRecipeStepFormDataSchema),
     }),
   ),
 })

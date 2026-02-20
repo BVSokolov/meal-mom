@@ -19,6 +19,8 @@ import { useForm } from "react-hook-form"
 import RecipeIngredients from "./ingredients"
 import React from "react"
 import CustomFormItem from "@/src/components/shared/form/custom-form-item"
+import { Switch } from "@/src/components/ui/switch"
+import RecipeSteps from "./steps"
 
 const NewRecipe = () => {
   const router = useRouter()
@@ -36,8 +38,8 @@ const NewRecipe = () => {
 
   const onSubmit = async (formData: NewRecipeFormData) => {
     console.log(formData)
-    const res = await insertRecipe(formData)
-    console.log("res", res)
+    // const res = await insertRecipe(formData)
+    // console.log("res", res)
   }
 
   return (
@@ -64,15 +66,37 @@ const NewRecipe = () => {
         />
 
         {/* RECIPE SERVINGS */}
+        <FormField
+          control={control}
+          name="servings"
+          render={({ field }) => (
+            <CustomFormItem label="Recipe Servings">
+              <Input placeholder="Enter servings" {...field} />
+            </CustomFormItem>
+          )}
+        />
 
         {/* IS PUBLIC */}
+        <FormField
+          control={control}
+          name="public"
+          render={({ field, fieldState }) => (
+            <CustomFormItem label="Make Recipe Public">
+              <Switch
+                name={field.name}
+                checked={field.value}
+                onCheckedChange={field.onChange}
+                aria-invalid={fieldState.invalid}
+              />
+            </CustomFormItem>
+          )}
+        />
 
-        {/* INGREDIENTS */}
-        <RecipeIngredients />
         {/* SECTIONS OF INGREDIENTS */}
+        <RecipeIngredients />
 
-        {/* STEPS */}
         {/* SECTIONS OF STEPS */}
+        <RecipeSteps />
       </form>
     </Form>
   )

@@ -22,6 +22,7 @@ import {
   insertRecipeStepFormDataSchema,
 } from "@/src/lib/validators"
 import { NewRecipeFormData } from "@/src/types/formData"
+import { FC } from "react"
 import {
   useFieldArray,
   UseFieldArrayReturn,
@@ -174,16 +175,99 @@ const IngredientSection = ({ sectionIndex }: { sectionIndex: number }) => {
   )
 }
 
-const RecipeSections = ({
+const StepSection = ({ sectionIndex }: { sectionIndex: number }) => {
+  const NAME_KEY = `steps.${sectionIndex}.name` as const
+  const ELEMENTS_KEY = `steps.${sectionIndex}.elements` as const
+
+  const { control } = useFormContext<NewRecipeFormData>()
+
+  const sectionElementsFieldArray = useFieldArray<
+    SectionFieldArray<"step">,
+    `steps.${number}.elements`,
+    "field_id"
+  >({
+    name: `steps.${sectionIndex}.elements`,
+    keyName: "field_id",
+  })
+
+  const {
+    fields: stepFields,
+    append: appendStep,
+    remove: removeStep,
+  } = sectionElementsFieldArray
+
+  const onClickAddStep = () => {
+    appendStep({ text: "" })
+  }
+
+  const onClickRemoveStep = (index: number) => {
+    removeStep(index)
+  }
+
+  const onClickMoveStep = (index: number, up: boolean) => {
+    moveFieldArrayElement(sectionElementsFieldArray, index, up)
+  }
+
+  return (
+    <div className="ml-4 space-y-2">
+      <div>
+        {/* SECTION NAME */}
+        <FormField
+          control={control}
+          name={NAME_KEY}
+          render={({ field }) => (
+            <CustomFormItem>
+              <Input placeholder="Enter section name" {...field} />
+            </CustomFormItem>
+          )}
+        />
+      </div>
+      {stepFields.map(({ field_id }, index) => (
+        <div className="flex gap-1 items-end" key={`${field_id}-step`}>
+          <Button
+            variant="destructive"
+            onClick={() => onClickRemoveStep(index)}
+          >
+            Remove
+          </Button>
+          <Button onClick={() => onClickMoveStep(index, true)}>Move Up</Button>
+          <Button onClick={() => onClickMoveStep(index, false)}>
+            Move Down
+          </Button>
+
+          {/* STEP TEXT */}
+          {`${index + 1}.`}
+          <FormField
+            control={control}
+            name={`${ELEMENTS_KEY}.${index}.text`}
+            render={({ field }) => (
+              <CustomFormItem>
+                <Input placeholder="Enter step" {...field} />
+              </CustomFormItem>
+            )}
+          />
+        </div>
+      ))}
+
+      <Button onClick={onClickAddStep}>Add Step</Button>
+    </div>
+  )
+}
+
+type RecipeSectionsProps<T extends SectionVariant> = {
+  variant: T
+  sectionsFieldArray: T extends "ingredient"
+    ? UseFieldArrayReturn<
+        SectionFieldArray<"ingredient">,
+        "ingredients",
+        "field_id"
+      >
+    : UseFieldArrayReturn<SectionFieldArray<"step">, "steps", "field_id">
+}
+
+const RecipeSections: FC<RecipeSectionsProps<SectionVariant>> = ({
   variant,
   sectionsFieldArray,
-}: {
-  variant: SectionVariant
-  sectionsFieldArray: UseFieldArrayReturn<
-    Partial<{ ingredients: NewRecipeFormData["ingredients"] }>,
-    "ingredients",
-    "field_id"
-  >
 }) => {
   const {
     fields: sectionFields,
@@ -192,7 +276,6 @@ const RecipeSections = ({
   } = sectionsFieldArray
 
   const onClickAddSection = () => {
-    // // @ts-expect-error TODO: i don't know how to fix this and i've ran out of fucks to give
     appendSection({ name: "", elements: [] })
   }
 
@@ -223,7 +306,9 @@ const RecipeSections = ({
             </Button>
             {variant === "ingredient" ? (
               <IngredientSection sectionIndex={index} />
-            ) : null}
+            ) : (
+              <StepSection sectionIndex={index} />
+            )}
           </div>
         )
       })}
