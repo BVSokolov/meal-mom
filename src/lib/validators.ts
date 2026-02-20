@@ -9,23 +9,30 @@ const NAME_ZOD_VALIDATOR = z
 
 const ID_ZOD_VALIDATOR = (errorMsg: string) => z.uuid().min(1, `${errorMsg}`)
 
+// DATABASE TABLE VALIDATORS
+//
+//
+
+// Insert Recipe
+export const insertRecipeSchema = z.object({
+  name: NAME_ZOD_VALIDATOR,
+  servings: z.number().min(1, "Servings must be at least 1"),
+  public: z.boolean(),
+})
+
+// Insert Recipe Section
+export const insertRecipeSectionSchema = z.object({
+  name: NAME_ZOD_VALIDATOR,
+  position: z.number().min(0, "Section position must be non-negative"),
+})
+
 // Insert Ingredient
 export const insertIngredientSchema = z.object({
   name: NAME_ZOD_VALIDATOR,
 })
 
-// Insert Recipe Section
-export const insertRecipeSectionSchema = z.object({
-  recipeId: ID_ZOD_VALIDATOR("Recipe ID is required"),
-  name: NAME_ZOD_VALIDATOR,
-  position: z.number().min(0, "Section position must be non-negative"),
-})
-
 // Insert Recipe Ingredient
 export const insertRecipeIngredientSchema = z.object({
-  ingredientId: z.uuid().optional(),
-  recipeId: ID_ZOD_VALIDATOR("Recipe ID is required"),
-  recipeSectionId: z.string(),
   amount: z.number().min(1, "Amount must be positive"),
   amountUOM: z.enum(QTY_UOM_ENUM),
   position: z.number().min(0, "Ingredient position must be non-negative"),
@@ -33,30 +40,35 @@ export const insertRecipeIngredientSchema = z.object({
 
 // Insert Recipe Step
 export const insertRecipeStepSchema = z.object({
-  recipeId: ID_ZOD_VALIDATOR("Recipe ID is required"),
-  recipeSectionId: z.string(),
   position: z.number().min(0, "Ingredient position must be non-negative"),
   text: z.string().min(10, "Recipe step must be at least 10 characters long"),
 })
 
-// Insert Recipe
-export const insertRecipeSchema = z.object({
-  name: NAME_ZOD_VALIDATOR,
-  servings: z.number().min(1, "Servings must be at least 1"),
-  userId: ID_ZOD_VALIDATOR("User ID required"),
-  public: z.boolean(),
-})
+// FORM DATA VALIDATORS
+//
+//
+
+export const insertRecipeIngredientFormDataSchema = insertRecipeIngredientSchema
+  .omit({ position: true })
+  .extend(insertIngredientSchema.shape)
+
+export const insertRecipeStepFormDataSchema = insertRecipeStepSchema
 
 // Insert New Recipe Form Data
 export const insertNewRecipeFormDataSchema = insertRecipeSchema.extend({
-  sections: z.array(insertRecipeSectionSchema),
   ingredients: z.array(
-    insertRecipeIngredientSchema
-      .extend(insertIngredientSchema.shape)
-      .omit({ ingredientId: true }),
+    z.object({
+      name: z
+        .string()
+        .min(3, "Section name must be at least 3 characters long"),
+      elements: z.array(insertRecipeIngredientFormDataSchema),
+    }),
   ),
-  steps: z.array(insertRecipeStepSchema),
 })
+
+// AUTHENTICATION VALIDATORS
+//
+//
 
 // Schema for signing user in
 const MIN_PW_LENGTH = 6
