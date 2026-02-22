@@ -3,7 +3,7 @@
 import { auth } from "@/src/auth"
 import { prisma } from "@/src/db/prisma-client"
 import { convertToPlainObject, formatError, formatResponse } from "../utils"
-import { NewRecipeFormData } from "@/src/types/formData"
+import { NewRecipeFormData } from "@/src/types/form"
 import {
   insertIngredientSchema,
   insertNewRecipeFormDataSchema,
@@ -84,41 +84,48 @@ export async function insertRecipe(formData: NewRecipeFormData) {
     if (!currentUser) throw new Error("User not found")
 
     // this needs to be part of a transaction!!!!
-    await prisma.$transaction(async (tx) => {
-      const recipeData = insertNewRecipeFormDataSchema.parse(formData)
-      const recipeMetadata = {
-        ...insertRecipeSchema.parse(recipeData),
-        userId: currentUser.id,
-      }
+    await prisma.$transaction(
+      async (tx) => {
+        const recipeData = insertNewRecipeFormDataSchema.parse(formData)
+        const recipeMetadata = {
+          ...insertRecipeSchema.parse(recipeData),
+          userId: currentUser.id,
+        }
 
-      const { id: recipeId } = await tx.recipe.create({
-        select: { id: true },
-        data: recipeMetadata,
-      })
-
-      const ingredientsFormData = recipeData.ingredients
-      ingredientsFormData.forEach(async ({ name, elements }, index) => {
-        const { id: recipeSectionId } = await tx.recipeSection.create({
-          data: { recipeId, name, position: index },
+        const { id: recipeId } = await tx.recipe.create({
           select: { id: true },
+          data: recipeMetadata,
         })
 
-        elements.forEach(async (recipeIngredient, index) => {
-          const ingredientId = await gotIngredientId(tx, recipeIngredient)
-          await tx.recipeIngredient.create({
-            data: {
-              ...recipeIngredient,
-              ingredientId,
-              recipeSectionId,
-              recipeId,
-              position: index,
-            },
+        const ingredientsFormData = recipeData.ingredients
+        ingredientsFormData.forEach(async ({ name, elements }, index) => {
+          const { id: recipeSectionId } = await tx.recipeSection.create({
+            data: { recipeId, name, position: index },
+            select: { id: true },
           })
-        })
-      })
-    })
 
-    return formatResponse(true, "User updated successfully")
+          // elements.forEach(async (recipeIngredient, index) => {
+          //   const ingredientId = await gotIngredientId(tx, recipeIngredient)
+          //   await tx.recipeIngredient.create({
+          //     data: {
+          //       ...recipeIngredient,
+          //       ingredientId,
+          //       recipeSectionId,
+          //       recipeId,
+          //       position: index,
+          //     },
+          //   })
+          // })
+        })
+      },
+      {
+        maxWait: 5000,
+        timeout: 20000,
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      },
+    )
+
+    return formatResponse(true, "Recipe saved successfully")
   } catch (error) {
     return formatResponse(false, formatError(error))
   }

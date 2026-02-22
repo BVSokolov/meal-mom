@@ -16,7 +16,7 @@ const ID_ZOD_VALIDATOR = (errorMsg: string) => z.uuid().min(1, `${errorMsg}`)
 // Insert Recipe
 export const insertRecipeSchema = z.object({
   name: NAME_ZOD_VALIDATOR,
-  servings: z.number().min(1, "Servings must be at least 1"),
+  servings: z.coerce.number<number>().min(1, "Servings must be at least 1"),
   public: z.boolean(),
 })
 
@@ -33,7 +33,7 @@ export const insertIngredientSchema = z.object({
 
 // Insert Recipe Ingredient
 export const insertRecipeIngredientSchema = z.object({
-  amount: z.number().min(1, "Amount must be positive"),
+  amount: z.coerce.number<number>().min(1, "Amount must be positive"),
   amountUOM: z.enum(QTY_UOM_ENUM),
   position: z.number().min(0, "Ingredient position must be non-negative"),
 })
@@ -41,7 +41,7 @@ export const insertRecipeIngredientSchema = z.object({
 // Insert Recipe Step
 export const insertRecipeStepSchema = z.object({
   position: z.number().min(0, "Ingredient position must be non-negative"),
-  text: z.string().min(10, "Recipe step must be at least 10 characters long"),
+  text: z.string().min(5, "Recipe step must be at least 5 characters long"),
 })
 
 // FORM DATA VALIDATORS
@@ -60,17 +60,13 @@ export const insertRecipeStepFormDataSchema = insertRecipeStepSchema.omit({
 export const insertNewRecipeFormDataSchema = insertRecipeSchema.extend({
   ingredients: z.array(
     z.object({
-      name: z
-        .string()
-        .min(3, "Section name must be at least 3 characters long"),
+      name: z.string(),
       elements: z.array(insertRecipeIngredientFormDataSchema),
     }),
   ),
   steps: z.array(
     z.object({
-      name: z
-        .string()
-        .min(3, "Section name must be at least 3 characters long"),
+      name: z.string(),
       elements: z.array(insertRecipeStepFormDataSchema),
     }),
   ),

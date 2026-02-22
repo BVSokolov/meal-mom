@@ -1,6 +1,7 @@
-import { NewRecipeFormData } from "@/src/types/formData"
+import { NewRecipeFormData } from "@/src/types/form"
 import { useFieldArray } from "react-hook-form"
 import RecipeSections from "./sections"
+import SectionBody from "./section-body"
 
 const RecipeIngredients = () => {
   const ingredientSectionsFieldArray = useFieldArray<
@@ -13,13 +14,12 @@ const RecipeIngredients = () => {
   })
 
   return (
-    <div>
-      <h4>Ingredients</h4>
+    <SectionBody title="Ingredients">
       <RecipeSections
         variant="ingredient"
         sectionsFieldArray={ingredientSectionsFieldArray}
       />
-    </div>
+    </SectionBody>
   )
 }
 
