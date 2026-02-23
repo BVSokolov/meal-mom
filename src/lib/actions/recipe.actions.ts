@@ -3,7 +3,13 @@
 import { auth } from "@/src/auth"
 import { prisma } from "@/src/db/prisma-client"
 import { convertToPlainObject, formatError, formatResponse } from "../utils"
-import { NewRecipeFormData } from "@/src/types/form"
+import {
+  IngredientFormData,
+  NewRecipeFormData,
+  NewRecipeIngredientData,
+  SectionFormData,
+  SectionVariant,
+} from "@/src/types/form"
 import {
   insertIngredientSchema,
   insertNewRecipeFormDataSchema,
@@ -11,6 +17,7 @@ import {
 } from "../validators"
 import z from "zod"
 import { Prisma } from "../generated/prisma/client"
+import _ from "lodash"
 
 export async function getRecipes() {
   const session = await auth()
@@ -83,10 +90,41 @@ export async function insertRecipe(formData: NewRecipeFormData) {
 
     if (!currentUser) throw new Error("User not found")
 
+    const recipeData = insertNewRecipeFormDataSchema.parse(formData)
+    const ingredientsFormData = recipeData.ingredients
+    const formIngredientNames = _(ingredientsFormData).reduce<string[]>(
+      (result, { elements }, _key) => {
+        return [...result, ...elements.map((element) => element.name)]
+      },
+      [],
+    )
+
+    console.log("ASDASD form ingredient names ", formIngredientNames)
+
+    const existingIngredients = await _(
+      await prisma.ingredient.findMany({ select: { id: true, name: true } }),
+    )
+      .filter((ingredient) => formIngredientNames.includes(ingredient.name))
+      .mapKeys("name")
+      .value()
+
+    console.log("ASD EXISTING", existingIngredients)
+
+    const ingredientsToCreateNames = formIngredientNames.filter(
+      (name) => !existingIngredients[name],
+    )
+
+    console.log("ASD INGREDIENTS TO CREATE NAMES ", ingredientsToCreateNames)
+
+    const ingredientsData = _(ingredientsToCreateNames)
+      .map((name) => ({ name }))
+      .value()
+
+    console.log("ASD DATA TO CREATE INGREDIENTS ", ingredientsData)
+
     // this needs to be part of a transaction!!!!
     await prisma.$transaction(
       async (tx) => {
-        const recipeData = insertNewRecipeFormDataSchema.parse(formData)
         const recipeMetadata = {
           ...insertRecipeSchema.parse(recipeData),
           userId: currentUser.id,
@@ -96,32 +134,65 @@ export async function insertRecipe(formData: NewRecipeFormData) {
           select: { id: true },
           data: recipeMetadata,
         })
+        console.log("ASDASDASDASDASDASD recipe", recipeId)
 
-        const ingredientsFormData = recipeData.ingredients
-        ingredientsFormData.forEach(async ({ name, elements }, index) => {
-          const { id: recipeSectionId } = await tx.recipeSection.create({
-            data: { recipeId, name, position: index },
-            select: { id: true },
-          })
-
-          // elements.forEach(async (recipeIngredient, index) => {
-          //   const ingredientId = await gotIngredientId(tx, recipeIngredient)
-          //   await tx.recipeIngredient.create({
-          //     data: {
-          //       ...recipeIngredient,
-          //       ingredientId,
-          //       recipeSectionId,
-          //       recipeId,
-          //       position: index,
-          //     },
-          //   })
-          // })
+        const sectionIds = await tx.recipeSection.createManyAndReturn({
+          data: ingredientsFormData.map(({ name }, index) => ({
+            name,
+            recipeId,
+            position: index,
+          })),
+          select: { id: true },
         })
+
+        console.log("ASDASDASDDAD SECTIONS CREATED ", sectionIds)
+
+        const ingredientsDB = await tx.ingredient.createManyAndReturn({
+          data: ingredientsData,
+          select: { id: true, name: true },
+          skipDuplicates: true,
+        })
+
+        console.log("ASDASDASDDAD INGREDIENTS CREATED ", ingredientsDB)
+
+        const ingredientNameIdMap = _(ingredientsDB)
+          .mapKeys("name")
+          .assign(existingIngredients)
+          .mapValues("id")
+          .value()
+
+        console.log("ASDASDASD TRANSFORMED ", ingredientNameIdMap)
+
+        const recipeIngredientsData = _(ingredientsFormData).reduce<
+          NewRecipeIngredientData[]
+        >((result, { elements }, sectionIndex) => {
+          return [
+            ...result,
+            ...elements.map(({ name, amount, amountUOM }, index) => ({
+              amount,
+              amountUOM,
+              recipeId,
+              position: index,
+              recipeSectionId: sectionIds[sectionIndex].id,
+              ingredientId: ingredientNameIdMap[name],
+            })),
+          ]
+        }, [])
+
+        console.log(
+          "ASSDASDASDASD CREATING SECTION INGREDIENTS ",
+          recipeIngredientsData,
+        )
+
+        await tx.recipeIngredient.createMany({
+          data: recipeIngredientsData,
+        })
+        console.log("ASDASDASDASD FINISHED")
       },
       {
         maxWait: 5000,
         timeout: 20000,
-        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+        isolationLevel: Prisma.TransactionIsolationLevel.ReadUncommitted,
       },
     )
 

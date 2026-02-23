@@ -2,6 +2,7 @@ import z from "zod"
 import {
   insertNewRecipeFormDataSchema,
   insertRecipeIngredientFormDataSchema,
+  insertRecipeIngredientSchema,
   insertRecipeStepFormDataSchema,
 } from "../lib/validators"
 
@@ -12,6 +13,15 @@ export type SectionVariant = "ingredient" | "step"
 export type IngredientFormData = z.infer<
   typeof insertRecipeIngredientFormDataSchema
 >
+
+export type NewRecipeIngredientData = z.infer<
+  typeof insertRecipeIngredientSchema
+> & {
+  recipeSectionId: string
+  recipeId: string
+  ingredientId: string
+}
+
 export type StepFormData = z.infer<typeof insertRecipeStepFormDataSchema>
 
 export type SectionFormData<T extends SectionVariant> = {
