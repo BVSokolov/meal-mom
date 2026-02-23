@@ -4,18 +4,14 @@ import { auth } from "@/src/auth"
 import { prisma } from "@/src/db/prisma-client"
 import { convertToPlainObject, formatError, formatResponse } from "../utils"
 import {
-  IngredientFormData,
   NewRecipeFormData,
   NewRecipeIngredientData,
-  SectionFormData,
-  SectionVariant,
+  NewRecipeStepData,
 } from "@/src/types/form"
 import {
-  insertIngredientSchema,
   insertNewRecipeFormDataSchema,
   insertRecipeSchema,
 } from "../validators"
-import z from "zod"
 import { Prisma } from "../generated/prisma/client"
 import _ from "lodash"
 
@@ -27,56 +23,15 @@ export async function getRecipes() {
     where: {
       OR: [{ public: true }, { userId }],
     },
+    select: {
+      id: true,
+      name: true,
+      servings: true,
+    },
     orderBy: { name: "asc" },
   })
 
   return convertToPlainObject(recipes)
-}
-
-{
-  /**
-  formData: {
-    name,
-    servings,
-    public,
-    ingredients: [
-      {
-        name: sectionName,
-        elements: [
-          {
-            name,
-            position,
-            amount,
-            amountUOM
-          }
-        ]
-      }
-    ]
-  }
-  */
-}
-
-async function gotIngredientId(
-  tx: Prisma.TransactionClient,
-  ingredient: z.infer<typeof insertIngredientSchema>,
-) {
-  const ingredientId =
-    (
-      await prisma.ingredient.findFirst({
-        where: { name: ingredient.name },
-        select: { id: true },
-      })
-    )?.id || null
-
-  return (
-    ingredientId ??
-    (
-      await tx.ingredient.create({
-        data: { name: ingredient.name },
-        select: { id: true },
-      })
-    ).id
-  )
 }
 
 export async function insertRecipe(formData: NewRecipeFormData) {
@@ -136,16 +91,21 @@ export async function insertRecipe(formData: NewRecipeFormData) {
         })
         console.log("ASDASDASDASDASDASD recipe", recipeId)
 
-        const sectionIds = await tx.recipeSection.createManyAndReturn({
-          data: ingredientsFormData.map(({ name }, index) => ({
-            name,
-            recipeId,
-            position: index,
-          })),
-          select: { id: true },
-        })
+        const ingredientSectionIds = await tx.recipeSection.createManyAndReturn(
+          {
+            data: ingredientsFormData.map(({ name }, index) => ({
+              name,
+              recipeId,
+              position: index,
+            })),
+            select: { id: true },
+          },
+        )
 
-        console.log("ASDASDASDDAD SECTIONS CREATED ", sectionIds)
+        console.log(
+          "ASDASDASDDAD INGREDIENT SECTIONS CREATED ",
+          ingredientSectionIds,
+        )
 
         const ingredientsDB = await tx.ingredient.createManyAndReturn({
           data: ingredientsData,
@@ -173,7 +133,7 @@ export async function insertRecipe(formData: NewRecipeFormData) {
               amountUOM,
               recipeId,
               position: index,
-              recipeSectionId: sectionIds[sectionIndex].id,
+              recipeSectionId: ingredientSectionIds[sectionIndex].id,
               ingredientId: ingredientNameIdMap[name],
             })),
           ]
@@ -187,7 +147,37 @@ export async function insertRecipe(formData: NewRecipeFormData) {
         await tx.recipeIngredient.createMany({
           data: recipeIngredientsData,
         })
-        console.log("ASDASDASDASD FINISHED")
+        console.log("ASDASDASDASD RECIPE INGREDIENTS CREATED")
+
+        const stepsFormData = recipeData.steps
+        const stepSectionIds = await tx.recipeSection.createManyAndReturn({
+          data: stepsFormData.map(({ name }, index) => ({
+            name,
+            recipeId,
+            position: index,
+          })),
+          select: { id: true },
+        })
+
+        console.log("ASDASDASDDAD STEP SECTIONS CREATED ", stepSectionIds)
+
+        const recipeStepsData = _(stepsFormData).reduce<NewRecipeStepData[]>(
+          (result, { elements }, sectionIndex) => {
+            return [
+              ...result,
+              ...elements.map(({ text }, index) => ({
+                text,
+                recipeId,
+                position: index,
+                recipeSectionId: stepSectionIds[sectionIndex].id,
+              })),
+            ]
+          },
+          [],
+        )
+
+        console.log("ASDASDASDASD stepsdata to create ", recipeStepsData)
+        await tx.recipeStep.createMany({ data: recipeStepsData })
       },
       {
         maxWait: 5000,
@@ -200,11 +190,4 @@ export async function insertRecipe(formData: NewRecipeFormData) {
   } catch (error) {
     return formatResponse(false, formatError(error))
   }
-
-  // create recipe and get its id
-
-  // for each ingredient section
-  // create section and get its id
-  // for each ingredient
-  // create ingredient with section id
 }

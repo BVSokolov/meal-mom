@@ -4,6 +4,7 @@ import {
   insertRecipeIngredientFormDataSchema,
   insertRecipeIngredientSchema,
   insertRecipeStepFormDataSchema,
+  insertRecipeStepSchema,
 } from "../lib/validators"
 
 export type NewRecipeFormData = z.infer<typeof insertNewRecipeFormDataSchema>
@@ -20,6 +21,11 @@ export type NewRecipeIngredientData = z.infer<
   recipeSectionId: string
   recipeId: string
   ingredientId: string
+}
+
+export type NewRecipeStepData = z.infer<typeof insertRecipeStepSchema> & {
+  recipeSectionId: string
+  recipeId: string
 }
 
 export type StepFormData = z.infer<typeof insertRecipeStepFormDataSchema>
