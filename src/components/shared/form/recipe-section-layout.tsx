@@ -4,13 +4,13 @@ import { Separator } from "../../ui/separator"
 export const SectionLayout = {
   SectionHeader: ({ children }: { children: React.ReactNode }) => (
     <CardHeader>
-      <div className="mx-4">{children}</div>
+      <div className="mx-4 mb-2">{children}</div>
     </CardHeader>
   ),
   SectionContent: ({ children }: { children: React.ReactNode }) => (
-    <Card>
-      <CardContent className="flex flex-col gap-2">{children}</CardContent>
-    </Card>
+    // <Card>
+    <div className="flex flex-col gap-4">{children}</div>
+    // </Card>
   ),
   SectionEntry: ({
     index,

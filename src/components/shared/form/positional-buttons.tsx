@@ -14,6 +14,7 @@ const PositionalButtons: FC<PositionalButtonsProps> = ({
 }) => (
   <div className={`flex gap-2 flex-nowrap w-full  sm:w-auto ${className}`}>
     <Button
+      type="button"
       className="w-1 h-6 md:w-9 md:h-9"
       variant="destructive"
       onClick={() => remove.fn(remove.index)}
@@ -21,12 +22,14 @@ const PositionalButtons: FC<PositionalButtonsProps> = ({
       <Trash2 width={24} height={24} />
     </Button>
     <Button
+      type="button"
       className="w-1 h-6 md:w-9 md:h-9"
       onClick={() => move.fn(move.index, true)}
     >
       <ChevronUp width={24} height={24} />
     </Button>
     <Button
+      type="button"
       className="w-1 h-6 md:w-9 md:h-9"
       onClick={() => move.fn(move.index, false)}
     >

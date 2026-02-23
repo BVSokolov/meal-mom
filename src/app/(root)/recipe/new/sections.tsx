@@ -65,6 +65,7 @@ const RecipeSections: FC<RecipeSectionsProps<SectionVariant>> = ({
         )
       })}
       <Button
+        type="button"
         variant="outline"
         className="w-full h-20"
         onClick={onClickAddSection}

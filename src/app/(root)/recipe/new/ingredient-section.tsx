@@ -73,7 +73,7 @@ const IngredientSection = ({ sectionIndex }: { sectionIndex: number }) => {
           control={control}
           name={NAME_KEY}
           render={({ field, fieldState }) => (
-            <CustomFormItem fieldState={fieldState}>
+            <CustomFormItem fieldState={fieldState} noError>
               <Input placeholder="Enter section name" {...field} />
             </CustomFormItem>
           )}
@@ -155,6 +155,7 @@ const IngredientSection = ({ sectionIndex }: { sectionIndex: number }) => {
           </div>
         ))}
         <Button
+          type="button"
           variant="secondary"
           className="self-center w-full h-20"
           onClick={onClickAddIngredient}

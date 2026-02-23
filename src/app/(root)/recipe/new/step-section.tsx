@@ -84,6 +84,7 @@ const StepSection = ({ sectionIndex }: { sectionIndex: number }) => {
           </div>
         ))}
         <Button
+          type="button"
           variant="secondary"
           className="self-center w-full h-20"
           onClick={onClickAddStep}
