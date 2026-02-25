@@ -2,7 +2,12 @@
 
 import { auth } from "@/src/auth"
 import { prisma } from "@/src/db/prisma-client"
-import { convertToPlainObject, formatError, formatResponse } from "../utils"
+import {
+  convertToPlainObject,
+  formatError,
+  formatResponse,
+  FormattedResponse,
+} from "../utils"
 import {
   NewRecipeFormData,
   NewRecipeIngredientData,
@@ -14,6 +19,7 @@ import {
 } from "../validators"
 import { Prisma } from "../generated/prisma/client"
 import _ from "lodash"
+import { Recipe } from "@/src/types"
 
 export async function getRecipes() {
   const session = await auth()
@@ -32,6 +38,53 @@ export async function getRecipes() {
   })
 
   return convertToPlainObject(recipes)
+}
+
+export async function getFullRecipe(
+  id: string,
+): Promise<FormattedResponse<Recipe>> {
+  try {
+    const recipe = await prisma.recipe.findFirst({
+      where: { id },
+      include: {
+        recipeSections: {
+          select: { id: true, name: true, position: true },
+        },
+        recipeIngredients: {
+          select: {
+            id: true,
+            recipeSectionId: true,
+            amount: true,
+            amountUOM: true,
+            position: true,
+            ingredient: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+        recipeSteps: {
+          select: {
+            id: true,
+            position: true,
+            text: true,
+            recipeSectionId: true,
+          },
+        },
+      },
+    })
+
+    if (!recipe) throw new Error("Could not find recipe")
+
+    return formatResponse<Recipe>(
+      true,
+      "Recipe found",
+      convertToPlainObject(recipe),
+    )
+  } catch (error) {
+    return formatResponse(false, formatError(error))
+  }
 }
 
 export async function insertRecipe(formData: NewRecipeFormData) {

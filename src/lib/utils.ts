@@ -41,10 +41,20 @@ export function formatError(error: any) {
   }
 }
 
-export function formatResponse(success: boolean, message: string) {
+export type FormattedResponse<T> = {
+  success: boolean
+  message: string
+  data?: T
+}
+export function formatResponse<T>(
+  success: boolean,
+  message: string,
+  data?: T,
+): FormattedResponse<T> {
   return {
     success,
     message,
+    data,
   }
 }
 
