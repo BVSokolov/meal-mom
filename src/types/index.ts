@@ -22,9 +22,24 @@ export type RecipeSection = z.infer<typeof insertRecipeSectionSchema> & {
   id: string
 }
 
-export type Recipe = z.infer<typeof insertRecipeSchema> & {
+export type RecipeMetadata = z.infer<typeof insertRecipeSchema> & {
   id: string
+}
+
+export type Recipe = RecipeMetadata & {
   recipeSections: Array<RecipeSection>
   recipeIngredients: Array<RecipeIngredient>
   recipeSteps: Array<RecipeStep>
+}
+
+export type SectionData<T extends RecipeIngredient | RecipeStep> = {
+  id: string
+  name: string
+  position: number
+  elements: Array<T>
+}
+
+export type RecipeData = RecipeMetadata & {
+  ingredients: SectionData<RecipeIngredient>[]
+  steps: SectionData<RecipeStep>[]
 }

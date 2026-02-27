@@ -1,53 +1,16 @@
+"use client"
+
 import { getFullRecipe } from "@/src/lib/actions/recipe.actions"
 import _ from "lodash"
-import { Metadata } from "next"
-import { FC } from "react"
+import { useEffect, useState } from "react"
+import { useParams } from "next/navigation"
+import { Recipe, RecipeData } from "@/src/types"
+import Ingredients from "./ingredients"
+import Steps from "./steps"
 
-export const metadata: Metadata = {
-  title: "Recipe",
-}
-
-const Ingredients = ({ ingredients }) => {
-  return (
-    <ol>
-      {ingredients.map(({ id, name, elements }) => (
-        <li key={id}>
-          <h3>{name}</h3>
-          <ol>
-            {elements.map(({ id, ingredient }) => (
-              <li key={id}>{ingredient.name}</li>
-            ))}
-          </ol>
-        </li>
-      ))}
-    </ol>
-  )
-}
-
-const Steps = ({ steps }) => {
-  return (
-    <ol>
-      {steps.map(({ id, name, elements }) => (
-        <li key={id}>
-          <h3>{name}</h3>
-          <ol>
-            {elements.map(({ id, text }) => (
-              <li key={id}>{text}</li>
-            ))}
-          </ol>
-        </li>
-      ))}
-    </ol>
-  )
-}
-
-const RecipePage = async (props: { params: Promise<{ id: string }> }) => {
-  const { id } = await props.params
-  const { success, message, data } = await getFullRecipe(id)
-
-  if (!data) return null
-
+const convertToRecipeData = (data: Recipe): RecipeData => {
   const {
+    id,
     name,
     public: isPublic,
     servings,
@@ -72,8 +35,33 @@ const RecipePage = async (props: { params: Promise<{ id: string }> }) => {
     }))
     .orderBy("position")
     .value()
+  return {
+    id,
+    name,
+    public: isPublic,
+    servings,
+    ingredients,
+    steps,
+  }
+}
 
-  console.log("got id ", id, sections, JSON.stringify(ingredients), steps)
+const RecipePage = () => {
+  const [recipeData, setRecipeData] = useState<RecipeData>()
+  const { id } = useParams<{ id: string }>()
+
+  useEffect(() => {
+    const getRecipeData = async () => {
+      const { success, message, data } = await getFullRecipe(id)
+      if (success && data) {
+        setRecipeData(convertToRecipeData(data))
+      }
+    }
+    getRecipeData()
+  }, [id])
+
+  if (!recipeData) return null
+
+  const { name, ingredients, steps } = recipeData
 
   return (
     <>
